@@ -137,18 +137,52 @@
             document.getElementById('trainersList').innerHTML = html || "<tr><td colspan='3'>لا يوجد مدربين</td></tr>";
         }
 
-        async function handleLogin() {
-            const payload = { action: "login", email: document.getElementById('loginEmail').value, password: document.getElementById('loginPass').value };
-            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
-            const result = await res.json();
-            if(result.result === "success") {
-                currentUser = result.user;
-                fillProfileFields();
-                showSection('dashboardSection');
-                document.getElementById('logoutBtn').classList.remove('section-hidden');
-                document.getElementById('welcomeTitle').innerText = "أهلاً بك، " + currentUser.name;
-            } else { alert(result.message); }
-        }
+// دالة التسجيل المحدثة
+async function handleRegister() {
+    const payload = {
+        action: "register",
+        full_name: document.getElementById('regName').value,
+        email: document.getElementById('regEmail').value,
+        password: document.getElementById('regPass').value,
+        specialization: document.getElementById('regSpec').value,
+        whatsapp: document.getElementById('regPhone').value
+    };
+
+    // استخدام mode: 'no-cors' أو إرسال الطلب كـ Form عادي هو الحل الأضمن مع Apps Script
+    fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors', // هذا السطر يحل مشكلة الحماية
+        cache: 'no-cache',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    }).then(() => {
+        alert("تم إرسال طلب التسجيل بنجاح! يرجى الانتظار ثواني ثم حاول الدخول.");
+        showSection('loginSection');
+    }).catch(err => alert("حدث خطأ في الاتصال"));
+}
+
+// دالة الدخول المحدثة
+async function handleLogin() {
+    const email = document.getElementById('loginEmail').value;
+    const pass = document.getElementById('loginPass').value;
+    
+    // جلب البيانات أولاً للتحقق (لأن POST مع no-cors لا يعيد بيانات مباشرة)
+    const res = await fetch(API_URL + "?action=login"); 
+    const data = await res.json();
+    
+    const user = data.find(u => u.email === email && u.pass === pass);
+    
+    if(user) {
+        currentUser = user;
+        fillProfileFields();
+        showSection('dashboardSection');
+        document.getElementById('logoutBtn').classList.remove('section-hidden');
+        document.getElementById('welcomeTitle').innerText = "أهلاً بك، " + user.name;
+    } else {
+        alert("بيانات الدخول غير صحيحة أو الحساب قيد التدقيق");
+    }
+}
+
 
         function fillProfileFields() {
             document.getElementById('upName').value = currentUser.name;
